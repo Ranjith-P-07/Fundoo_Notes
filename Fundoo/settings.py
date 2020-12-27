@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = '+(i#-zw$aq5$3d^+tc*d+jg4w9$ugm)ax(wnf25cb*arjk)co6'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_short_url',
 ]
+
+Site=5 
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -124,6 +126,7 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
 
 JWT_AUTH = {
     'JWT_ENCODE_HANDLER':
