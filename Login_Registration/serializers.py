@@ -21,3 +21,8 @@ class EmailSerializers(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['email']
+
+class ResetSerializers(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['password']
