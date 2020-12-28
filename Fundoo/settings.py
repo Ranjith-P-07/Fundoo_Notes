@@ -43,6 +43,7 @@ INSTALLED_APPS = [
 
     'rest_framework',
     'django_short_url',
+    'drf_yasg',
 ]
 
 Site=5 
