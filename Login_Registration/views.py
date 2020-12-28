@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 
 from rest_framework.generics import GenericAPIView
-from .serializers import RegistrationSerializers, LoginSerializers
+from .serializers import RegistrationSerializers, LoginSerializers, EmailSerializers
 from rest_framework.response import Response
 from django.contrib.auth.models import User, auth
 from django.contrib.auth import authenticate, get_user_model
@@ -28,6 +28,9 @@ from Fundoo import settings
 
 from django.views.generic import TemplateView
 User = get_user_model()
+
+from django.core.validators import validate_email
+from .token import token_activation
 
 def home(request):
     return render(request, 'home.html')
@@ -142,3 +145,58 @@ class Login(GenericAPIView):
             return Response("No User Exist with this username or email")
 
 
+class Logout(GenericAPIView):
+    serializer_class = LoginSerializers
+    def get(self, request):
+        try:
+            user = request.user
+            logout(request)
+            return Response({'details': 'your succefully loggeg out,thankyou'})
+        except Exception:
+            return Response({'details': 'something went wrong while logout'})
+
+        
+
+class Forgotpassword(GenericAPIView):
+
+    serializer_class = EmailSerializers
+
+    def post(self, request):
+        # data = request.data
+        email = request.data['email']
+        if email == "":
+            return Response({'details': 'email should not be empty'})
+        else:
+            try:
+                validate_email(email)
+            except Exception:
+                return Response({'details': 'not a valid email'})
+            try:
+                user = User.objects.filter(email=email)
+                user_email = user.values()[0]['email']
+                user_username = user.values()[0]['username']
+                user_id = user.values()[0]['id']
+                # print(user_email, user_id, user_username)
+                if user_email is not None:
+                    token = token_activation(user_username, user_id)
+                    url = str(token)
+                    surl = get_surl(url)
+                    z = surl.split('/')
+                    mail_subject = "Activate your account by clicking below link"
+                    mail_message = render_to_string('email_validate.html', {
+                        'user': user_username,
+                        'domain': get_current_site(request).domain,
+                        'surl': z[2]
+                    })
+                    # print(mail_message)
+                    recipient_email = user_email
+                    subject, from_email, to = 'greeting from fundoo,Activate your account by clicking below link', settings.EMAIL_HOST, recipient_email
+                    msg = EmailMultiAlternatives(subject, mail_message, from_email, [to])
+                    msg.attach_alternative(mail_message, "text/html")
+                    msg.send()
+                    # email = EmailMessage(
+                    #     mail_subject, mail_message, to=[recipient_email])
+                    # email.send()
+                    return Response({'details': 'please check your email,link has sent your email'})
+            except:
+                return Response({'details': 'something went wrong'})
