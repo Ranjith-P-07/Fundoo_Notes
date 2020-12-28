@@ -33,6 +33,8 @@ from django.core.validators import validate_email
 from .token import token_activation
 from django.contrib import messages
 
+from drf_yasg.utils import swagger_auto_schema
+
 def home(request):
     return render(request, 'home.html')
     
@@ -42,6 +44,8 @@ class Registration(GenericAPIView):
     serializer_class = RegistrationSerializers
     # def get(self, request):
     #     return render(request,'registration.html')
+
+    @swagger_auto_schema(responses={200: RegistrationSerializers()})
     
     def post(self, request):
         if request.user.is_authenticated:
