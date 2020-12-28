@@ -108,5 +108,37 @@ def activate(request, surl):
     except Exception as f:
         return Response(f)
 
+class Login(GenericAPIView):
+    serializer_class = LoginSerializers
+
+    # def get(self, request):
+    #     return render(request, 'login.html')
+
+
+    def post(self, request):
+        if request.user.is_authenticated :
+            return Response({'details': 'user is already authenticated'})
+        data = request.data
+        username = data.get('username')
+        password = data.get('password')
+        user = authenticate(username=username, password=password)
+        print(username, password)
+        try:
+            qs = User.objects.filter(
+                Q(username__iexact=username) or
+                Q(email__iexact=email)
+            )
+            if qs.count() == 1:
+                user_obj = qs.first()
+                if user_obj.check_password(password):
+                    user = user_obj
+                    login(request, user,backend='django.contrib.auth.backends.ModelBackend')
+                    payload = jwt_payload_handler(user)
+                    token = jwt_encode_handler(payload)
+                    return redirect('/auth/home')
+                return Response("check password again")
+            return Response("multiple users are present with this username")
+        except:
+            return Response("No User Exist with this username or email")
 
 
