@@ -82,12 +82,12 @@ class Registration(GenericAPIView):
             # token = token_activation(user.username, user.password)
             url = str(token)
             surl = get_surl(url)
-            z = surl.split("/")
+            short_token = surl.split("/")
             mail_subject = "Activate your account by clicking below link"
             mail_message = render_to_string('email_validation.html', {
                 'user': user.username,
                 'domain': get_current_site(request).domain,
-                'surl': z[2]
+                'surl': short_token[2]
             })
             recipient_email = user.email
             subject, from_email, to = 'greeting from fundoo,Activate your account by clicking below link', settings.EMAIL_HOST, recipient_email
@@ -132,12 +132,12 @@ class Login(GenericAPIView):
         user = authenticate(username=username, password=password)
         print(username, password)
         try:
-            qs = User.objects.filter(
+            check = User.objects.filter(
                 Q(username__iexact=username) or
                 Q(email__iexact=email)
             )
-            if qs.count() == 1:
-                user_obj = qs.first()
+            if check.count() == 1:
+                user_obj = check.first()
                 if user_obj.check_password(password):
                     user = user_obj
                     login(request, user,backend='django.contrib.auth.backends.ModelBackend')
@@ -189,14 +189,14 @@ class Forgotpassword(GenericAPIView):
                     # token = jwt_encode_handler(payload)
                     url = str(token)
                     surl = get_surl(url)
-                    z = surl.split('/')
-                    # print(z)
+                    short_token = surl.split('/')
+                    # print(short_token)
                     mail_subject = "Activate your account by clicking below link"
                     print(user_username, get_current_site(request).domain)
                     mail_message = render_to_string('email_validate.html', {
                         'user': user_username,
                         'domain': get_current_site(request).domain,
-                        'surl': z[2]
+                        'surl': short_token[2]
                     })
                     # print(mail_message)
                     recipient_email = user_email
