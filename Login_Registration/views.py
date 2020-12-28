@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 
 from rest_framework.generics import GenericAPIView
-from .serializers import RegistrationSerializers, LoginSerializers, EmailSerializers
+from .serializers import RegistrationSerializers, LoginSerializers, EmailSerializers, ResetSerializers
 from rest_framework.response import Response
 from django.contrib.auth.models import User, auth
 from django.contrib.auth import authenticate, get_user_model
@@ -31,6 +31,7 @@ User = get_user_model()
 
 from django.core.validators import validate_email
 from .token import token_activation
+from django.contrib import messages
 
 def home(request):
     return render(request, 'home.html')
@@ -177,12 +178,17 @@ class Forgotpassword(GenericAPIView):
                 user_username = user.values()[0]['username']
                 user_id = user.values()[0]['id']
                 # print(user_email, user_id, user_username)
-                if user_email is not None:
+                if user_email:
                     token = token_activation(user_username, user_id)
+                    print(token)
+                    # payload = jwt_payload_handler(user_username)
+                    # token = jwt_encode_handler(payload)
                     url = str(token)
                     surl = get_surl(url)
                     z = surl.split('/')
+                    # print(z)
                     mail_subject = "Activate your account by clicking below link"
+                    print(user_username, get_current_site(request).domain)
                     mail_message = render_to_string('email_validate.html', {
                         'user': user_username,
                         'domain': get_current_site(request).domain,
@@ -192,11 +198,55 @@ class Forgotpassword(GenericAPIView):
                     recipient_email = user_email
                     subject, from_email, to = 'greeting from fundoo,Activate your account by clicking below link', settings.EMAIL_HOST, recipient_email
                     msg = EmailMultiAlternatives(subject, mail_message, from_email, [to])
+                    # print(msg)
                     msg.attach_alternative(mail_message, "text/html")
                     msg.send()
-                    # email = EmailMessage(
-                    #     mail_subject, mail_message, to=[recipient_email])
-                    # email.send()
                     return Response({'details': 'please check your email,link has sent your email'})
             except:
                 return Response({'details': 'something went wrong'})
+    
+def reset_password(request, surl):
+    try:
+        # here decode is done with jwt
+
+        tokenobject = ShortURL.objects.get(surl=surl)
+        token = tokenobject.lurl
+        decode = jwt.decode(token, settings.SECRET_KEY)
+        username = decode['username']
+        user = User.objects.get(username=username)
+
+        # if user is not none then we will fetch the data and redirect to the reset password page
+        if user is not None:
+            context = {'userReset': user.username}
+            print(context)
+            return redirect('/auth/resetpassword/' + str(user)+'/')
+        else:
+            messages.info(request, 'was not able to sent the email')
+            return redirect('forgotpassword')
+    except KeyError:
+        messages.info(request, 'was not able to sent the email')
+        return redirect('forgotpassword')
+    except Exception as e:
+        print(e)
+        messages.info(request, 'activation link expired')
+        return redirect('forgotpassword')
+
+
+class ResetPassword(GenericAPIView):
+    serializer_class = ResetSerializers
+
+    def post(self, request, user_reset):
+        password1 = request.data['password']
+
+        if user_reset is None:
+            return Response({'details': 'not a valid user'})
+        elif (password1) == "":
+            return Response({'details': 'password should not be empty'})
+        else:
+            try:
+                user = User.objects.get(username=user_reset)
+                user.set_password(password1)
+                user.save()
+                return Response({'details': 'your password has been Set'})
+            except Exception:
+                return Response({'details': 'not a valid user'})
