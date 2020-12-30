@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Registration
+from .models import Registration, Profile
 from django.contrib.auth.models import User
 
 
@@ -26,3 +26,9 @@ class ResetSerializers(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['password']
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['image']
