@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 
 from rest_framework.generics import GenericAPIView
-from .serializers import RegistrationSerializers, LoginSerializers, EmailSerializers, ResetSerializers
+from .serializers import RegistrationSerializers, LoginSerializers, EmailSerializers, ResetSerializers, ProfileUpdateSerializer
 from rest_framework.response import Response
 from django.contrib.auth.models import User, auth
 from django.contrib.auth import authenticate, get_user_model
@@ -35,6 +35,10 @@ from django.contrib import messages
 
 from drf_yasg.utils import swagger_auto_schema
 
+from django.contrib.auth.decorators import login_required
+from rest_framework import permissions
+from .models import Profile
+
 def home(request):
     return render(request, 'home.html')
     
@@ -55,7 +59,7 @@ class Registration(GenericAPIView):
         email = data.get('email')
         password1 = data.get('password1')
         password2 = data.get('password2')
-        print(password1)
+        # print(password1)
         if len(password1) < 4 or len(password2) <4:
             return Response("length of the password must be greater than 4") 
         elif password1 != password2:
@@ -130,7 +134,7 @@ class Login(GenericAPIView):
         username = data.get('username')
         password = data.get('password')
         user = authenticate(username=username, password=password)
-        print(username, password)
+        # print(username, password)
         try:
             check = User.objects.filter(
                 Q(username__iexact=username) or
@@ -184,7 +188,7 @@ class Forgotpassword(GenericAPIView):
                 # print(user_email, user_id, user_username)
                 if user_email:
                     token = token_activation(user_username, user_id)
-                    print(token)
+                    # print(token)
                     # payload = jwt_payload_handler(user_username)
                     # token = jwt_encode_handler(payload)
                     url = str(token)
@@ -215,6 +219,7 @@ def reset_password(request, surl):
 
         tokenobject = ShortURL.objects.get(surl=surl)
         token = tokenobject.lurl
+        # print(token)
         decode = jwt.decode(token, settings.SECRET_KEY)
         username = decode['username']
         user = User.objects.get(username=username)
@@ -254,3 +259,34 @@ class ResetPassword(GenericAPIView):
                 return Response({'details': 'your password has been Set'})
             except Exception:
                 return Response({'details': 'not a valid user'})
+
+
+# @login_required(login_url='login')
+# def profileView(request):
+#     return render(request, '.html')
+
+class ProfileUpdate(GenericAPIView):
+    serializer_class = ProfileUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    # def get(self, request):
+    #     return render(request, '.html')
+
+
+    def post(self, request):
+        img = request.FILES['image']
+        print(img)
+        try:
+            user = Profile.objects.get(user=request.user)
+            serializer = ProfileUpdateSerializer(user, data={'image':img})
+
+            if serializer.is_valid():
+                serializer.save()
+                return Response('Profile image updated')
+            else:
+                return Response(serializer.errors, status=400)
+        except:
+            return Response(serializer.errors, status=400)
+
+    
+
