@@ -39,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'Login_Registration',
+    'Login_Registration.apps.LoginRegistrationConfig',
 
     'rest_framework',
     'django_short_url',
@@ -84,8 +84,12 @@ WSGI_APPLICATION = 'Fundoo.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'djongo',
-        'NAME': 'Notes',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'db_fundoonote',
+        'USER': 'fundoo',
+        'PASSWORD': '12345',
+        'HOST': '127.0.0.1',
+        'PORT': '5432',
     }
 }
 
@@ -127,6 +131,8 @@ USE_TZ = False
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+MEDIA_ROOT = os.path.join(BASE_DIR,'media')  #DIRECTORY WHERE UPLOADED FILE SAVE
+MEDIA_URL = '/media/'
 
 
 JWT_AUTH = {
