@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Login_Registration.apps.LoginRegistrationConfig',
+    'Note',
 
     'rest_framework',
     'django_short_url',
