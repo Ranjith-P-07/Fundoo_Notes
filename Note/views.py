@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework.generics import GenericAPIView
 from .serializers import NotesSerializer
 from .models import Notes
@@ -10,6 +10,10 @@ from rest_framework import generics
 
 
 
+@method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
+class ListNoteView(generics.ListAPIView):
+    serializer_class = NotesSerializer
+    queryset = Notes.objects.all()
 
 
 
@@ -32,4 +36,6 @@ class NoteCreateView(GenericAPIView):
             serializer.save(user_id=user.id)
             return Response(serializer.data, status=201)
         return Response(serializer.data, status=400)
+
+
 
