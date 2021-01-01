@@ -23,6 +23,7 @@ class NoteCreateView(GenericAPIView):
     queryset = Notes.objects.all()
     def get(self, request):
         user = request.user
+        print(user)
         notes = Notes.objects.filter(user_id = user.id, is_archive=False)
         serializer = NotesSerializer(notes, many=True)
         return Response(serializer.data, status=200)
@@ -38,4 +39,50 @@ class NoteCreateView(GenericAPIView):
         return Response(serializer.data, status=400)
 
 
+@method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
+class NoteUpdateView(GenericAPIView):
+    serializer_class = NotesSerializer
+    queryset = Notes.objects.all()
+
+    def get_object(self, request, id):
+        try:
+            user = request.user
+            print(user)
+            queryset = Notes.objects.filter(user_id=user.id)
+            print(queryset)
+            return get_object_or_404(queryset, id=id)
+        except Notes.DOesNotExit:
+            return Response({'details': 'Id not present'})
+
+    def get(self, request, id):
+        try:
+            user = request.user
+            note = self.get_object(request, id)
+            serializer = NotesSerializer(note)
+            return Response(serializer.data, status=200)
+        except Exception as e:
+            return Response(e)
+
+    def put(self, request, id):
+        user = request.user
+        try:
+            data = request.data
+            instance = self.get_object(request, id)
+            serializer = NotesSerializer(instance, data=data)
+            if serializer.is_valid():
+                note_update = serializer.save(user_id=user.id)
+                return Response({'details': 'Note updated succesfully'})
+            return Response({'deatils': 'Note is not Updated..!!!'})
+        except Exception as e:
+            return Response(e)
+
+    def delete(self, request, id):
+        user = request.user
+        try:
+            data = request.data
+            instance = self.get_object(request, id)
+            instance.delete()
+            return Response({'details': 'Note is Deleted'})
+        except:
+            return Response({'details': 'Note is not deleted..'})
 
