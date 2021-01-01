@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
-import os
+import os, logging
 import datetime
 from decouple import config
 
@@ -20,6 +20,15 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
+
+
+# #Logging 
+log_filename = "logs/output.log"
+os.makedirs(os.path.dirname(log_filename), exist_ok=True)
+formatter = logging.Formatter('%(levelname)s :%(asctime)s :%(pathname)s :%(lineno)s :%(message)s')
+file_handler = logging.FileHandler(filename=log_filename)
+file_handler.setFormatter(formatter)
+
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = config('SECRET_KEY')
@@ -40,11 +49,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Login_Registration.apps.LoginRegistrationConfig',
-    'Note',
+    'Note.apps.NoteConfig',
 
     'rest_framework',
     'django_short_url',
     'drf_yasg',
+    'colorful',
 ]
 
 Site=5 
@@ -85,10 +95,10 @@ WSGI_APPLICATION = 'Fundoo.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'db_fundoonote',
-        'USER': 'fundoo',
-        'PASSWORD': '12345',
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'loginapp',
+        'USER': 'ranju',
+        'PASSWORD': 'testing123',
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }
