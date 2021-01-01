@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework.generics import GenericAPIView
-from .serializers import NotesSerializer
-from .models import Notes
+from .serializers import NotesSerializer, LabelSerializer
+from .models import Notes, Label
 from rest_framework.response import Response
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
@@ -86,3 +86,31 @@ class NoteUpdateView(GenericAPIView):
         except:
             return Response({'details': 'Note is not deleted..'})
 
+
+
+
+class LabelCreateView(GenericAPIView):
+    serializer_class = LabelSerializer
+    queryset = Label.objects.all()
+
+    def get(self, request):
+        try:
+            user = request.user
+            labels = Label.objects.filter(user_id=user.id)
+            serializer = LabelSerializer(labels, many=True)
+            return Response(serializer.data, status=200)
+        except Exception as e:
+            return Response(e)
+
+    def post(self, request):
+        user = request.user
+        try:
+            label=request.data['labelname']
+            if label == "":
+                return Response({'details': 'labelname should be blank'})
+            if Label.objects.filter(user_id=user.id, labelname=label).exists():
+                return Response({'details': 'label already exists'})
+            create_label = Label.objects.create(labelname=label, user_id=user.id)
+            return Response({'details': 'new label created'})
+        except Exception as e:
+            return Response(e)
