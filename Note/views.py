@@ -141,4 +141,50 @@ class LabelCreateView(GenericAPIView):
             logger.error("Something went wrong")
             return Response(e)
 
- 
+class LabelUpdateView(GenericAPIView):
+    serializer_class = LabelSerializer
+    queryset = Label.objects.all()
+
+    def get_object(self, request, id):
+        try:
+            user = request.user
+            queryset = Label.objects.filter(user_id=user.id)
+            return get_object_or_404(queryset, id=id)
+        except Label.DOesNotExit:
+            logger.error("id not present, from get_object()")
+            return Response({'details': 'id not present'})
+
+    def get(self, request, id):
+        instance = self.get_object(request, id)
+        serializer = LabelSerializer(instance)
+        logger.info("Got Label object, from get()")
+        return Response(serializer.data)
+
+    def put(self, request, id):
+        user = request.user
+        try:
+            data = request.data
+            label = request.data['labelname']
+            instance = self.get_object(request, id)
+            serializer = LabelSerializer(instance, data=data)
+            if serializer.is_valid():
+                update_label = serializer.save()
+                logger.info("Label Updated successfully, from put()")
+                return Response({'details': 'Label Updated successfully'})
+            logger.error("Label not Updated, from put()")
+            return Response({'details': 'Label not Updated'})
+        except:
+            logger.error("Label is not present, from put()")
+            return Response({'details': 'Label is is not present'})
+
+
+    def delete(self, request, id):
+        try:
+            data = request.data
+            instance = self.get_object(request, id)
+            instance.delete()
+            logger.info("Label deleted succesfully, from delete()")
+            return Response({'details': 'Label deleted succesfully'})
+        except:
+            logger.error("Label not deleted, from delete()")
+            return Response({'details': 'Label not deleted'})
