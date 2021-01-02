@@ -28,9 +28,28 @@ class ListNoteView(generics.ListAPIView):
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class NoteCreateView(GenericAPIView):
+    """
+        Summary:
+        --------
+            Note class will let authorized user to create and get notes.
+        --------
+        Methods:
+            get: User will get all the notes.
+            post: User will able to create new note.
+    """
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
+
     def get(self, request):
+        """
+            Summary:
+            --------
+                All the notes will be fetched for the user.
+            --------
+            Exception:
+                PageNotAnInteger: object
+                EmptyPage: object.
+        """
         user = request.user
         # print(user)
         notes = Notes.objects.filter(user_id = user.id, is_archive=False)
@@ -40,6 +59,14 @@ class NoteCreateView(GenericAPIView):
 
 
     def post(self, request):
+        """
+            Summary:
+            --------
+                New note will be create by the User.
+            Exception:
+            ----------
+                KeyError: object
+        """
         data = request.data
         user = request.user
         serializer = NotesSerializer(data=data, partial=True)
@@ -110,10 +137,28 @@ class NoteUpdateView(GenericAPIView):
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class LabelCreateView(GenericAPIView):
+    """
+        Summary:
+        --------
+            LabelCreate class will let authorized user to create and get labels.
+        --------
+        Methods:
+            get: User will get all the labels.
+            post: User will able to create new label.
+    """
     serializer_class = LabelSerializer
     queryset = Label.objects.all()
 
     def get(self, request):
+        """
+            Summary:
+            --------
+                All the labels will be fetched for the user.
+            --------
+            Exception:
+                PageNotAnInteger: object
+                EmptyPage: object.
+        """
         try:
             user = request.user
             labels = Label.objects.filter(user_id=user.id)
@@ -125,6 +170,14 @@ class LabelCreateView(GenericAPIView):
             return Response(e)
 
     def post(self, request):
+        """
+            Summary:
+            --------
+                New note will be create by the User.
+            Exception:
+            ----------
+                KeyError: object
+        """
         user = request.user
         try:
             label=request.data['labelname']
