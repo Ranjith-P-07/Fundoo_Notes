@@ -43,6 +43,9 @@ class AuthenticationAPITest(TestCase):
             'password': '123456r',
         }
 
+        self.valid_credentials1= {
+            'email' : 'Rahul@gmail.com',
+        }
 
     def test_register_user_with_valid_payload(self):
         response = client.post(reverse('register'),data=json.dumps(self.valid_payload), content_type='application/json', follow=True)
@@ -69,6 +72,9 @@ class AuthenticationAPITest(TestCase):
         response = client.get(reverse('logout'), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    
+    def test_forgotPass(self):
+        client.post(reverse('login'), data=json.dumps(self.valid_credentials), content_type='application/json')
+        response = client.post(reverse('forgotpassword'), data=json.dumps(self.valid_credentials1), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
