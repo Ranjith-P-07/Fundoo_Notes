@@ -137,3 +137,46 @@ class NoteViewAPITest(TestCase):
         response = self.client.delete(reverse('note-update',kwargs={'id':self.note_for_user2.id}), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
+### Test cases for list and create label
+
+    def test_get_all_labels_if_login_with_invalid_credentials(self):
+        self.client.post(reverse('login'),data=json.dumps(self.invalid_credentials), content_type='application/json')
+        response = self.client.get(reverse('create_label'))
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_get_all_labels_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        labels = Label.objects.filter(user=self.user1)
+        serializer = LabelSerializer(labels, many=True)
+        response = self.client.get(reverse('create_label'))
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_all_labels_without_login(self):
+        labels = Label.objects.filter(user=self.user1)
+        response = self.client.get(reverse('create_label'))
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_get_all_labels_of_other_user_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        labels = Label.objects.filter(user=self.user2)
+        serializer = LabelSerializer(labels, many=True)
+        response = self.client.get(reverse('create_label'))
+        self.assertNotEqual(response.data, serializer.data)
+
+
+    def test_create_label_with_valid_payload_without_login(self):
+        response = self.client.post(reverse('create_label'),data=json.dumps(self.valid_label_payload), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+
+    def test_create_label_with_valid_label_payload_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.post(reverse('create_label'),data=json.dumps(self.valid_label_payload), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_create_label_with_invalid_label_payload_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.post(reverse('create_label'),data=json.dumps(self.invalid_label_payload), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
