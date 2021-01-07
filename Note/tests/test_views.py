@@ -84,5 +84,56 @@ class NoteViewAPITest(TestCase):
         response = self.client.post(reverse('create_note'), data=json.dumps(self.invalid_payload), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+### Test cases for update, delete note
 
+    def test_get_notes_by_id_without_login(self):
+        response = self.client.get(reverse('note-update',kwargs={'id': self.note_for_user1.id}))
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_get_notes_by_id_after_login_with_invalid_credentials(self):
+        self.client.post(reverse('login'),data=json.dumps(self.invalid_credentials), content_type='application/json')
+        response = self.client.get(reverse('note-update',kwargs={'id': self.note_for_user1.id}))
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_get_notes_by_id_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        notes = Notes.objects.get(id=self.note_for_user1.id)
+        serializer = NotesSerializer(notes)
+        response = self.client.get(reverse('note-update', kwargs={'id': self.note_for_user1.id}))
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_get_notes_by_id_of_other_user_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.get(reverse('note-update', kwargs={'id': self.note_for_user2.id}))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_notes_with_valid_payload_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.put(reverse('note-update',kwargs={'id':self.note_for_user1.id}), data=json.dumps(self.valid_payload), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+    
+    def test_update_notes_with_invalid_payload_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.put(reverse('note-update',kwargs={'id':self.note_for_user1.id}), data=json.dumps(self.invalid_payload), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_notes_with_id_of_other_user_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.put(reverse('note-update',kwargs={'id':self.note_for_user2.id}), data=json.dumps(self.invalid_payload), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_note_without_login(self):
+        response = self.client.delete(reverse('note-update',kwargs={'id':self.note_for_user1.id}), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_delete_note_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.delete(reverse('note-update',kwargs={'id':self.note_for_user1.id}), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+    def test_delete_note_with_id_of_other_user_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.delete(reverse('note-update',kwargs={'id':self.note_for_user2.id}), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
