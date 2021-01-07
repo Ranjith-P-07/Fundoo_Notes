@@ -180,3 +180,49 @@ class NoteViewAPITest(TestCase):
         response = self.client.post(reverse('create_label'),data=json.dumps(self.invalid_label_payload), content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
 
+### Test Cases for Retriew, Update and Delete
+
+    def test_get_labels_by_id_without_login(self):
+        response = self.client.get(reverse('label_update',kwargs={'id': self.label_for_user1.id}))
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_get_labels_by_id_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        labels = Label.objects.get(id=self.label_for_user1.id)
+        serializer = LabelSerializer(labels)
+        response = self.client.get(reverse('label_update',kwargs={'id': self.label_for_user1.id}))
+        self.assertEqual(response.data, serializer.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_update_label_with_valid_payload_without_login(self):
+        response = self.client.put(reverse('label_update',kwargs={'id':self.label_for_user1.id}), data=json.dumps(self.valid_label_payload), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_update_label_with_valid_payload_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.put(reverse('label_update',kwargs={'id':self.label_for_user1.id}), data=json.dumps(self.valid_label_payload), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_update_label_with_invalid_payload_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.put(reverse('label_update',kwargs={'id':self.label_for_user1.id}), data=json.dumps(self.invalid_label_payload), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_update_label_with_valid_payload_with_another_user_id_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.put(reverse('label_update',kwargs={'id':self.label_for_user2.id}), data=json.dumps(self.valid_label_payload), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_delete_label_without_login(self):
+        response = self.client.delete(reverse('label_update',kwargs={'id':self.label_for_user1.id}), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_delete_label_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.delete(reverse('label_update',kwargs={'id':self.label_for_user1.id}), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+    
+    def test_delete_label_of_other_user_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        response = self.client.delete(reverse('label_update',kwargs={'id':self.label_for_user2.id}), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
