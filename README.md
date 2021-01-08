@@ -1,8 +1,8 @@
 # Fundoo Notes
 
 ### This project contains two app:
-### 1. Login-Registration.                                        
-### 2. Note.
+### 1. Login-Registration: contains Login, Logout ,Email verification, Forgotpassword, Resetpassword. Used jwt for token creation.                                       
+### 2. Note: User can create notes, label.
 
 ## Installed Libraries:
 Django                  3.1.4    
