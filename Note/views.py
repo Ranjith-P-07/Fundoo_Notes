@@ -11,6 +11,8 @@ from rest_framework import generics
 import logging
 from Fundoo.settings import file_handler
 
+from rest_framework import status
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logger.addHandler(file_handler)
@@ -23,6 +25,7 @@ class ListNoteView(generics.ListAPIView):
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
     logger.info("Notes listed succesfully..!!")
+
 
 
 
@@ -86,9 +89,9 @@ class NoteUpdateView(GenericAPIView):
     def get_object(self, request, id):
         try:
             user = request.user
-            print(user)
+            # print(user)
             queryset = Notes.objects.filter(user_id=user.id)
-            print(queryset)
+            # print(queryset)
             return get_object_or_404(queryset, id=id)
         except Notes.DOesNotExit:
             logger.error("id not present, from get_object()")
@@ -101,9 +104,9 @@ class NoteUpdateView(GenericAPIView):
             serializer = NotesSerializer(note)
             logger.info("got Note successfully, from get()")
             return Response(serializer.data, status=200)
-        except Exception as e:
+        except:
             logger.error("something went wrong while getting Note, Enter the right id, from get()")
-            return Response(e)
+            return Response(status=404)
 
     def put(self, request, id):
         user = request.user
@@ -114,12 +117,15 @@ class NoteUpdateView(GenericAPIView):
             if serializer.is_valid():
                 note_update = serializer.save(user_id=user.id)
                 logger.info("Note updated succesfully, from put()")
-                return Response({'details': 'Note updated succesfully'})
+                return Response({'details': 'Note updated succesfully'}, status=200)
             logger.error("Note is not Updated something went wrong, from put()")
-            return Response({'deatils': 'Note is not Updated..!!!'})
-        except Exception as e:
+            return Response({'deatils': 'Note is not Updated..!!!'}, status=400)
+        except:
             logger.error("Something went wrong")
-            return Response(e)
+            return Response(status=404)
+        # except Exception as e:
+        #     logger.error("Something went wrong")
+        #     return Response(e)
 
     def delete(self, request, id):
         user = request.user
@@ -128,10 +134,10 @@ class NoteUpdateView(GenericAPIView):
             instance = self.get_object(request, id)
             instance.delete()
             logger.info("Note is Deleted Succesfully, from delete()")
-            return Response({'details': 'Note is Deleted'})
+            return Response({'details': 'Note is Deleted'}, status=204)
         except:
             logger.error("Something went wrong")
-            return Response({'details': 'Note is not deleted..'})
+            return Response({'details': 'Note is not deleted..'}, status=404)
 
 
 
@@ -183,17 +189,18 @@ class LabelCreateView(GenericAPIView):
             label=request.data['labelname']
             if label == "":
                 logger.error("labelname should be blank, from post()")
-                return Response({'details': 'labelname should be blank'})
+                return Response({'details': 'labelname should be blank'}, status=204)
             if Label.objects.filter(user_id=user.id, labelname=label).exists():
                 logger.error("label already exists, from post()")
                 return Response({'details': 'label already exists'})
             create_label = Label.objects.create(labelname=label, user_id=user.id)
             logger.info("New Label is created.")
-            return Response({'details': 'new label created'})
+            return Response({'details': 'new label created'}, status=201)
         except Exception as e:
             logger.error("Something went wrong")
             return Response(e)
 
+@method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class LabelUpdateView(GenericAPIView):
     serializer_class = LabelSerializer
     queryset = Label.objects.all()
@@ -203,7 +210,7 @@ class LabelUpdateView(GenericAPIView):
             user = request.user
             queryset = Label.objects.filter(user_id=user.id)
             return get_object_or_404(queryset, id=id)
-        except Label.DOesNotExit:
+        except:
             logger.error("id not present, from get_object()")
             return Response({'details': 'id not present'})
 
@@ -211,7 +218,7 @@ class LabelUpdateView(GenericAPIView):
         instance = self.get_object(request, id)
         serializer = LabelSerializer(instance)
         logger.info("Got Label object, from get()")
-        return Response(serializer.data)
+        return Response(serializer.data, status=200)
 
     def put(self, request, id):
         user = request.user
@@ -223,12 +230,12 @@ class LabelUpdateView(GenericAPIView):
             if serializer.is_valid():
                 update_label = serializer.save()
                 logger.info("Label Updated successfully, from put()")
-                return Response({'details': 'Label Updated successfully'})
+                return Response({'details': 'Label Updated successfully'}, status=200)
             logger.error("Label not Updated, from put()")
-            return Response({'details': 'Label not Updated'})
+            return Response({'details': 'Label not Updated'}, status=400)
         except:
             logger.error("Label is not present, from put()")
-            return Response({'details': 'Label is is not present'})
+            return Response({'details': 'Label is is not present'}, status=404)
 
 
     def delete(self, request, id):
@@ -237,7 +244,15 @@ class LabelUpdateView(GenericAPIView):
             instance = self.get_object(request, id)
             instance.delete()
             logger.info("Label deleted succesfully, from delete()")
-            return Response({'details': 'Label deleted succesfully'})
+            return Response({'details': 'Label deleted succesfully'}, status=204)
         except:
             logger.error("Label not deleted, from delete()")
-            return Response({'details': 'Label not deleted'})
+            return Response({'details': 'Label not deleted'}, status=404)
+
+@method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
+class TrashNoteAPI(generics.ListAPIView):
+    serializer_class = NotesSerializer
+    queryset = Notes.objects.all()
+
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user, is_archive=True)
