@@ -8,6 +8,12 @@ from django.contrib.auth.decorators import login_required
 
 from rest_framework import generics
 
+import json
+import redis
+from django.conf import settings
+# Connect to our Redis instance
+redis_instance = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
+
 import logging
 from Fundoo.settings import file_handler
 
@@ -22,7 +28,7 @@ logger.addHandler(file_handler)
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class ListNoteView(generics.ListAPIView):
-    serializer_class = NotesSerializer
+    serializer_class = NotesSerializer  
     queryset = Notes.objects.all()
     logger.info("Notes listed succesfully..!!")
 
@@ -74,8 +80,10 @@ class NoteCreateView(GenericAPIView):
         user = request.user
         serializer = NotesSerializer(data=data, partial=True)
         if serializer.is_valid():
-            serializer.save(user_id=user.id)
+            redis_note_create = serializer.save(user_id=user.id)
             logger.info("New Note is created.")
+            redis_instance.hmset(str(user.id)+ "note", {redis_note_create.id: str(json.dumps(serializer.data))})
+            print(redis_instance.hgetall(str(user.id)+ "note"))
             return Response(serializer.data, status=201)
         logger.error("Something went wrong whlie creating Note, from post()")
         return Response(serializer.data, status=400)
