@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 # #Logging 
-log_filename = "logs/output.log"
+log_filename = "logs/Fundoo.log"
 os.makedirs(os.path.dirname(log_filename), exist_ok=True)
 formatter = logging.Formatter('%(levelname)s :%(asctime)s :%(pathname)s :%(lineno)s :%(message)s')
 file_handler = logging.FileHandler(filename=log_filename)
@@ -102,6 +102,7 @@ DATABASES = {
         'HOST': '127.0.0.1',
         'PORT': '5432',
     }
+    
 }
 
 
@@ -145,6 +146,7 @@ STATIC_URL = '/static/'
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')  #DIRECTORY WHERE UPLOADED FILE SAVE
 MEDIA_URL = '/media/'
 
+BASE_URL = config('BASE_URL')
 
 JWT_AUTH = {
     'JWT_ENCODE_HANDLER':
@@ -188,3 +190,6 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
+
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
