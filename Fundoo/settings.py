@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     'django_short_url',
     'drf_yasg',
     'colorful',
+    'django_filters',
 ]
 
 Site=5 
@@ -104,6 +105,7 @@ DATABASES = {
     }
     
 }
+
 
 
 # Password validation
