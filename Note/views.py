@@ -14,7 +14,7 @@ from django.conf import settings
 # Connect to our Redis instance
 redis_instance = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 
-
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 import logging
 from Fundoo.settings import file_handler
@@ -300,6 +300,10 @@ class TrashNoteAPI(generics.ListAPIView):
         return self.queryset.filter(user=self.request.user, is_archive=True)
 
 
-
+class SearchBoxView(generics.ListAPIView):
+    serializer_class = NotesSerializer
+    queryset = Notes.objects.all()
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['title', 'note', 'user__username']
 
 
