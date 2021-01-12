@@ -14,6 +14,8 @@ from django.conf import settings
 # Connect to our Redis instance
 redis_instance = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
 
+
+
 import logging
 from Fundoo.settings import file_handler
 
@@ -82,8 +84,8 @@ class NoteCreateView(GenericAPIView):
         if serializer.is_valid():
             redis_note_create = serializer.save(user_id=user.id)
             logger.info("New Note is created.")
-            redis_instance.hmset(str(user.id)+ "note", {redis_note_create.id: str(json.dumps(serializer.data))})
-            print(redis_instance.hgetall(str(user.id)+ "note"))
+            redis_instance.hmset(str(user.id)+"note", {redis_note_create.id: str(json.dumps(serializer.data))})
+            # print(redis_instance.hgetall(str(user.id)+ "note"))
             return Response(serializer.data, status=201)
         logger.error("Something went wrong whlie creating Note, from post()")
         return Response(serializer.data, status=400)
@@ -125,6 +127,7 @@ class NoteUpdateView(GenericAPIView):
             if serializer.is_valid():
                 note_update = serializer.save(user_id=user.id)
                 logger.info("Note updated succesfully, from put()")
+                redis_instance.hmset(str(user.id)+"note", {note_update.id: str(json.dumps(serializer.data))})
                 return Response({'details': 'Note updated succesfully'}, status=200)
             logger.error("Note is not Updated something went wrong, from put()")
             return Response({'deatils': 'Note is not Updated..!!!'}, status=400)
@@ -141,6 +144,7 @@ class NoteUpdateView(GenericAPIView):
             data = request.data
             instance = self.get_object(request, id)
             instance.delete()
+            redis_instance.hdel(str(user.id)+"note", id)
             logger.info("Note is Deleted Succesfully, from delete()")
             return Response({'details': 'Note is Deleted'}, status=204)
         except:
@@ -203,6 +207,7 @@ class LabelCreateView(GenericAPIView):
                 return Response({'details': 'label already exists'})
             create_label = Label.objects.create(labelname=label, user_id=user.id)
             logger.info("New Label is created.")
+            redis_instance.hmset(str(user.id)+"label",{create_label.id:label})
             return Response({'details': 'new label created'}, status=201)
         except Exception as e:
             logger.error("Something went wrong")
@@ -240,6 +245,7 @@ class LabelUpdateView(GenericAPIView):
                 logger.info("Label Updated successfully, from put()")
                 return Response({'details': 'Label Updated successfully'}, status=200)
             logger.error("Label not Updated, from put()")
+            redis_instance.hmset(str(user.id)+"label",{update_label.id:label})
             return Response({'details': 'Label not Updated'}, status=400)
         except:
             logger.error("Label is not present, from put()")
@@ -251,11 +257,39 @@ class LabelUpdateView(GenericAPIView):
             data = request.data
             instance = self.get_object(request, id)
             instance.delete()
+            redis_instance.hdel(str(user.id)+"label",id)
             logger.info("Label deleted succesfully, from delete()")
             return Response({'details': 'Label deleted succesfully'}, status=204)
         except:
             logger.error("Label not deleted, from delete()")
             return Response({'details': 'Label not deleted'}, status=404)
+
+@method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
+class ArchiveNoteView(GenericAPIView):
+    serializer_class = NotesSerializer
+    queryset = Notes.objects.all()
+    lookup_field = 'id'
+
+    def get(self, request):
+        user = request.user
+        try:
+            archive_redis_data = redis_instance.hvals(str(user.id)+"is_archive")
+            if len(archive_redis_data) > 0:
+                serializer = NotesSerializer(archive_redis_data, many=True)
+                print("Data from redis")
+                return Response(serializer.data, status=200)
+            else:
+                archive_db_data = Notes.objects.filter(user_id = user.id, is_archive=True)
+                if len(archive_db_data) > 0:
+                    serializer = NotesSerializer(archive_db_data, many=True)
+                    print("Data from Database")
+                    return Response(serializer.data, status=200)
+                else:
+                    return Response("Archive data not available", status=400)
+        except Exception as e:
+            return Response(e)
+        # except:
+        #     return Response("something went wrong", status=400)
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class TrashNoteAPI(generics.ListAPIView):
@@ -264,3 +298,8 @@ class TrashNoteAPI(generics.ListAPIView):
 
     def get_queryset(self):
         return self.queryset.filter(user=self.request.user, is_archive=True)
+
+
+
+
+
