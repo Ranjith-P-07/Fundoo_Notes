@@ -39,6 +39,10 @@ from django.contrib.auth.decorators import login_required
 from rest_framework import permissions
 from .models import Profile
 
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+
+
 def home(request):
     return render(request, 'home.html')
     
@@ -52,8 +56,8 @@ class Registration(GenericAPIView):
     @swagger_auto_schema(responses={200: RegistrationSerializers()})
     
     def post(self, request):
-        if request.user.is_authenticated:
-            return Response("your are already registred,please do login")
+        # if request.user.is_authenticated:
+        #     return Response("your are already registred,please do login")
         data = request.data
         username = data.get('username')
         email = data.get('email')
@@ -61,9 +65,9 @@ class Registration(GenericAPIView):
         password2 = data.get('password2')
         # print(password1)
         if len(password1) < 4 or len(password2) <4:
-            return Response("length of the password must be greater than 4") 
+            return Response("length of the password must be greater than 4", status=status.HTTP_400_BAD_REQUEST)
         elif password1 != password2:
-            return Response("passwords are not matching")
+            return Response("passwords are not matching", status=status.HTTP_400_BAD_REQUEST)
         check_name = User.objects.filter(
             Q(username__iexact=username)
         )
@@ -98,8 +102,7 @@ class Registration(GenericAPIView):
             msg = EmailMultiAlternatives(subject, mail_message, from_email, [to])
             msg.attach_alternative(mail_message, "text/html")
             msg.send()
-            return Response({"details": "verify through your email"})
-
+            return Response({"details": "verify through your email"}, status=status.HTTP_201_CREATED)
 
 def activate(request, surl):
     try:
@@ -122,14 +125,15 @@ def activate(request, surl):
 
 class Login(GenericAPIView):
     serializer_class = LoginSerializers
+    permission_classes = (AllowAny,)
 
     # def get(self, request):
     #     return render(request, 'login.html')
 
 
     def post(self, request):
-        if request.user.is_authenticated :
-            return Response({'details': 'user is already authenticated'})
+        # if request.user.is_authenticated :
+        #     return Response({'details': 'user is already authenticated'})
         data = request.data
         username = data.get('username')
         password = data.get('password')
@@ -147,11 +151,12 @@ class Login(GenericAPIView):
                     login(request, user,backend='django.contrib.auth.backends.ModelBackend')
                     payload = jwt_payload_handler(user)
                     token = jwt_encode_handler(payload)
-                    return redirect('/auth/home')
-                return Response("check password again")
-            return Response("multiple users are present with this username")
+                    # return redirect('/auth/home', status=status.HTTP_200_OK)
+                    return Response(status=status.HTTP_200_OK)
+                return Response("check password again", status=status.HTTP_403_FORBIDDEN)
+            return Response("multiple users are present with this username", status=status.HTTP_403_FORBIDDEN)
         except:
-            return Response("No User Exist with this username or email")
+            return Response("No User Exist with this username or email", status=status.HTTP_403_FORBIDDEN)
 
 
 class Logout(GenericAPIView):
@@ -160,9 +165,9 @@ class Logout(GenericAPIView):
         try:
             user = request.user
             logout(request)
-            return Response({'details': 'your succefully loggeg out,thankyou'})
+            return Response({'details': 'your succefully loggeg out,thankyou'}, status=status.HTTP_200_OK)
         except Exception:
-            return Response({'details': 'something went wrong while logout'})
+            return Response({'details': 'something went wrong while logout'}, status=status.HTTP_403_FORBIDDEN)
 
         
 
@@ -182,6 +187,7 @@ class Forgotpassword(GenericAPIView):
                 return Response({'details': 'not a valid email'})
             try:
                 user = User.objects.filter(email=email)
+                print(user)
                 user_email = user.values()[0]['email']
                 user_username = user.values()[0]['username']
                 user_id = user.values()[0]['id']
@@ -209,8 +215,8 @@ class Forgotpassword(GenericAPIView):
                     # print(msg)
                     msg.attach_alternative(mail_message, "text/html")
                     msg.send()
-                    return Response({'details': 'please check your email,link has sent your email'})
-            except:
+                    return Response({'details': 'please check your email,link has sent your email'}, status=status.HTTP_200_OK)
+            except Exception as e:
                 return Response({'details': 'something went wrong'})
     
 def reset_password(request, surl):
@@ -270,19 +276,19 @@ class ProfileUpdate(GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     # def get(self, request):
-    #     return render(request, '.html')
+    #     return render(request, '')
 
 
     def post(self, request):
         img = request.FILES['image']
-        print(img)
+        # print(img)
         try:
             user = Profile.objects.get(user=request.user)
             serializer = ProfileUpdateSerializer(user, data={'image':img})
 
             if serializer.is_valid():
                 serializer.save()
-                return Response('Profile image updated')
+                return Response('Profile image updated', status=status.HTTP_200_OK)
             else:
                 return Response(serializer.errors, status=400)
         except:
