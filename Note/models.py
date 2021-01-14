@@ -8,6 +8,9 @@ class Label(models.Model):
     labelname = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
+    # def get_labelname(self):
+    #     return self.labelname
+
     def __str__(self):
         return self.labelname
 
@@ -23,6 +26,10 @@ class Notes(models.Model):
     date = models.DateTimeField(default=datetime.now, blank=True)
     color = RGBColorField(colors=['#FF0000', '#00FF00', '#0000FF'], blank=True, null=True)
     label = models.ManyToManyField(Label, blank=True)
+    collabrator = models.ManyToManyField(User, related_name="Collabrator_of_note", blank=True)
+
+    # def get_note(self):
+    #     return self.note
 
     def __str__(self):
-        return str(self.user)
+        return self.title
