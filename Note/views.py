@@ -14,8 +14,8 @@ from django.core.cache.backends.base import DEFAULT_TIMEOUT
 from django.views.decorators.cache import cache_page
 from django.conf import settings
 import redis_cache
-# Connect to our Redis instance
-# redis_instance = redis.StrictRedis(host=settings.REDIS_HOST, port=settings.REDIS_PORT, db=0)
+
+from django.contrib.auth.models import User
 
 
 from rest_framework.filters import SearchFilter, OrderingFilter
@@ -327,3 +327,32 @@ class SearchBoxView(generics.ListAPIView):
     search_fields = ['title', 'note', 'user__username']
 
 
+class CollaboratorAPIView(GenericAPIView):
+    queryset = Notes.objects.all()
+    def get(self, request):
+        user = request.user
+        temp = []
+        try:
+            collabrator = Notes.objects.filter(user_id = user.id, collabrator__isnull=False,is_trashed =False)
+            print(collabrator)
+            if len(collabrator)>0:
+                collabrator_list = collabrator.values('collabrator','title')
+                print(collabrator_list)
+                
+                for i in range(len(collabrator_list)):
+                    print(i)
+                    print(collabrator_list[i]['collabrator'])
+                    collabrator_id = collabrator_list[i]['collabrator']
+                    print(collabrator_id)
+                    collabrator1 = User.objects.filter(id = collabrator_id)
+                    collabrator_email = collabrator1.values('email')
+                    print(collabrator_email[0])
+                    print(collabrator_list[i])
+                    collabrator_list[i].update(collabrator_email[0])
+                    temp = temp + [collabrator_list[i]]
+                    print(temp)
+                return Response(temp, status=200)
+            else:
+                return Response("No such Note available to have any collabrator Added")
+        except Exception as e:
+            return Response(e)
