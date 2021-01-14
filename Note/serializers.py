@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 class NotesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notes
-        fields = ['title', 'note', 'is_archive', 'is_trashed', 'is_pinned', 'color', 'label']
+        fields = ['title', 'note', 'is_archive', 'is_trashed', 'is_pinned', 'color', 'label', 'collabrator']
 
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
