@@ -24,6 +24,7 @@ import logging
 from Fundoo.settings import file_handler
 
 from rest_framework import status
+from django.db.models import Q
 
 CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
 
@@ -87,12 +88,12 @@ class NoteCreateView(GenericAPIView):
         data = request.data
         user = request.user
         serializer = NotesSerializer(data=data, partial=True)
+        print(serializer)
         if serializer.is_valid():
             note = serializer.save(user_id=user.id)
             logger.info("New Note is created.")
             cache.set(str(user.id)+"note"+str(note.id), note)
-            if cache.get(str(user.id)+"note"+str(note.id)):
-                logger.info("Data is stored in cache")
+            logger.info("Data is stored in cache")
             return Response(serializer.data, status=201)
         logger.error("Something went wrong whlie creating Note, from post()")
         return Response(serializer.data, status=400)
@@ -143,12 +144,12 @@ class NoteUpdateView(GenericAPIView):
                 return Response({'details': 'Note updated succesfully'}, status=200)
             logger.error("Note is not Updated something went wrong, from put()")
             return Response({'deatils': 'Note is not Updated..!!!'}, status=400)
-        except:
-            logger.error("Something went wrong")
-            return Response(status=404)
-        # except Exception as e:
+        # except:
         #     logger.error("Something went wrong")
-        #     return Response(e)
+        #     return Response(status=404)
+        except Exception as e:
+            logger.error("Something went wrong")
+            return Response(e)
 
 
     def delete(self, request, id):
@@ -320,38 +321,57 @@ class TrashNoteAPI(generics.ListAPIView):
         return self.queryset.filter(user=self.request.user, is_archive=True)
 
 
-class SearchBoxView(generics.ListAPIView):
+class SearchBoxView(GenericAPIView):
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
-    filter_backends = [SearchFilter, OrderingFilter]
-    search_fields = ['title', 'note', 'user__username']
+
+    def get_search(self, search_query=None):
+        user = self.request.user
+        if search_query:
+            search_split = search_query.split(' ')
+            if cache.get(search_query):
+                result = cache.get(search_query)
+                print("data from cache")
+            else:
+                for query in search_split:
+                    result = Notes.objects.filter(Q(title__icontains=query)|Q(note__icontains=query))
+                    if result:
+                        cache.set(search_query, result)
+                        print("Data from")
+        else:
+            result = Notes.objects.all()
+        return result
+
+    def get(self, request):
+        search_query = request.GET.get('search')
+        if search_query:
+            result = self.get_search(search_query)
+        else:
+            result = self.get_search()
+        serializer = NotesSerializer(result, many=True)
+        return Response(serializer.data, status=200)
+
+
 
 
 class CollaboratorAPIView(GenericAPIView):
+    serializer_class = NotesSerializer
     queryset = Notes.objects.all()
     def get(self, request):
         user = request.user
-        temp = []
+        num_collaborator = []
         try:
             collabrator = Notes.objects.filter(user_id = user.id, collabrator__isnull=False,is_trashed =False)
-            print(collabrator)
-            if len(collabrator)>0:
+            if (collabrator):
                 collabrator_list = collabrator.values('collabrator','title')
-                print(collabrator_list)
                 
                 for i in range(len(collabrator_list)):
-                    print(i)
-                    print(collabrator_list[i]['collabrator'])
                     collabrator_id = collabrator_list[i]['collabrator']
-                    print(collabrator_id)
                     collabrator1 = User.objects.filter(id = collabrator_id)
                     collabrator_email = collabrator1.values('email')
-                    print(collabrator_email[0])
-                    print(collabrator_list[i])
                     collabrator_list[i].update(collabrator_email[0])
-                    temp = temp + [collabrator_list[i]]
-                    print(temp)
-                return Response(temp, status=200)
+                    num_collaborator = num_collaborator + [collabrator_list[i]]
+                return Response(num_collaborator, status=200)
             else:
                 return Response("No such Note available to have any collabrator Added")
         except Exception as e:
