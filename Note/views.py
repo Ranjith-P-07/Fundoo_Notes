@@ -327,8 +327,8 @@ class TrashNoteAPI(generics.ListAPIView):
     queryset = Notes.objects.all()
 
     def get_queryset(self):
-        return self.queryset.filter(user=self.request.user, is_trashed=True)
         logger.info("Trashed Notes are Listed")
+        return self.queryset.filter(user=self.request.user, is_trashed=True)
 
 
 class SearchBoxView(GenericAPIView):
