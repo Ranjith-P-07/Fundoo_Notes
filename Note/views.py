@@ -37,6 +37,11 @@ logger.addHandler(file_handler)
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class ListNoteView(generics.ListAPIView):
+    """
+    Summary:
+    --------
+        All the notes will be listed for the user.
+    """
     serializer_class = NotesSerializer  
     queryset = Notes.objects.all()
     logger.info("Notes listed succesfully..!!")
@@ -296,14 +301,13 @@ class ArchiveNoteView(GenericAPIView):
             if len(archive_redis_data) > 0:
                 serializer = NotesSerializer(archive_redis_data, many=True)
                 print("Data from redis")
+                logger.info("ArchivedNotes are listed")
                 return Response(serializer.data, status=200)
             else:
                 archive_db_data = Notes.objects.filter(user_id = user.id, is_archive=True)
                 if len(archive_db_data) > 0:
                     serializer = NotesSerializer(archive_db_data, many=True)
                     print("Data from Database")
-                    # redis_instance.hmset(str(user.id)+"is_archive", {archive_db_data.id: str(json.dumps(serializer.data))})
-                    # print(redis_instance.hgetall(str(user.id)+"is_archive"))
                     return Response(serializer.data, status=200)
                 else:
                     return Response("Archive data not available", status=400)
@@ -314,11 +318,17 @@ class ArchiveNoteView(GenericAPIView):
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class TrashNoteAPI(generics.ListAPIView):
+    """
+    Summary:
+    --------
+        All the Trashed notes will be listed for the user.
+    """
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
 
     def get_queryset(self):
-        return self.queryset.filter(user=self.request.user, is_archive=True)
+        return self.queryset.filter(user=self.request.user, is_trashed=True)
+        logger.info("Trashed Notes are Listed")
 
 
 class SearchBoxView(GenericAPIView):
@@ -329,17 +339,18 @@ class SearchBoxView(GenericAPIView):
         user = self.request.user
         if search_query:
             search_split = search_query.split(' ')
-            if cache.get(search_query):
-                result = cache.get(search_query)
-                print("data from cache")
-            else:
-                for query in search_split:
+            print(search_split)
+            for query in search_split:
+                if cache.get(search_split):
+                    result = cache.get(search_split)
+                    print("data from cache")
+                else:
                     result = Notes.objects.filter(Q(title__icontains=query)|Q(note__icontains=query))
                     if result:
-                        cache.set(search_query, result)
-                        print("Data from")
+                        cache.set(search_split, result)
+                        print("Data from db")
         else:
-            result = Notes.objects.all()
+            result = Notes.objects.filter(user_id=user.id)
         return result
 
     def get(self, request):
