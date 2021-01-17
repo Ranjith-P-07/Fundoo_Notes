@@ -4,6 +4,7 @@ from datetime import datetime
 
 from colorful.fields import RGBColorField
 
+
 class Label(models.Model):
     labelname = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -27,6 +28,7 @@ class Notes(models.Model):
     color = RGBColorField(colors=['#FF0000', '#00FF00', '#0000FF'], blank=True, null=True)
     label = models.ManyToManyField(Label, blank=True)
     collabrator = models.ManyToManyField(User, related_name="Collabrator_of_note", blank=True)
+    trashed_time = models.DateTimeField(default=None, blank=True, null=True)
 
     # def get_note(self):
     #     return self.note
