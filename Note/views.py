@@ -5,6 +5,7 @@ from .models import Notes, Label
 from rest_framework.response import Response
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
+from datetime import datetime, timedelta
 
 from rest_framework import generics
 
@@ -160,15 +161,24 @@ class NoteUpdateView(GenericAPIView):
     def delete(self, request, id):
         user = request.user
         try:
-            data = request.data
+            # data = request.data
             instance = self.get_object(request, id)
-            instance.delete()
-            cache.delete(str(user.id)+"note"+str(id))
-            logger.info("Note is Deleted Succesfully, from delete()")
-            return Response({'details': 'Note is Deleted'}, status=204)
+            # print(instance)
+            if instance.is_trashed:
+                instance.delete()
+                logger.info("Note is Deleted Permanently, from delete()")
+                return Response({'details': 'Note is Deleted'}, status=200)
+            else:
+                instance.is_trashed = True
+                instance.trashed_time = datetime.now()
+                instance.save()
+                logger.info("Note is Trashed")
+                return Response({'details': 'Your note is Trashed'}, status=200)
+        # except Exception as e:
+        #     return Response(e)
         except:
-            logger.error("Something went wrong")
-            return Response({'details': 'Note is not deleted..'}, status=404)
+            logger.error("Note does not exist ")
+            return Response({'details': 'Note is not exist'}, status=404)
 
 
 
