@@ -29,6 +29,7 @@ class Notes(models.Model):
     label = models.ManyToManyField(Label, blank=True)
     collabrator = models.ManyToManyField(User, related_name="Collabrator_of_note", blank=True)
     trashed_time = models.DateTimeField(default=None, blank=True, null=True)
+    reminder = models.DateTimeField(default=None, blank=True, null=True)
 
     # def get_note(self):
     #     return self.note
