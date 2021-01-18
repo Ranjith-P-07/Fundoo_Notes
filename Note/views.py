@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework.generics import GenericAPIView
-from .serializers import NotesSerializer, LabelSerializer
+from .serializers import NotesSerializer, LabelSerializer, ReminderSerializer
 from .models import Notes, Label
 from rest_framework.response import Response
 from django.utils.decorators import method_decorator
@@ -107,6 +107,14 @@ class NoteCreateView(GenericAPIView):
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class NoteUpdateView(GenericAPIView):
+    """
+        Summary:
+        --------
+            Existing note can be updated / deleted  by the User.
+        Exception:
+        ----------
+            KeyError: object
+    """
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
 
@@ -300,6 +308,11 @@ class LabelUpdateView(GenericAPIView):
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class ArchiveNoteView(GenericAPIView):
+    """
+    Summary:
+    --------
+        All the ArchiveNotes  will be listed for the user.
+    """
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
     lookup_field = 'id'
@@ -342,6 +355,11 @@ class TrashNoteAPI(generics.ListAPIView):
 
 
 class SearchBoxView(GenericAPIView):
+    """
+        Summary:
+        --------
+            All the Searched data by user is listed based on title and note.
+    """
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
 
@@ -355,7 +373,8 @@ class SearchBoxView(GenericAPIView):
                     result = cache.get(search_split)
                     print("data from cache")
                 else:
-                    result = Notes.objects.filter(Q(title__icontains=query)|Q(note__icontains=query))
+                    note = Notes.objects.filter(user_id=user.id, is_trashed=False)
+                    result = note.filter(Q(title__icontains=query)|Q(note__icontains=query))
                     if result:
                         cache.set(search_split, result)
                         print("Data from db")
@@ -376,6 +395,14 @@ class SearchBoxView(GenericAPIView):
 
 
 class CollaboratorAPIView(GenericAPIView):
+    """
+        Summary:
+        --------
+            Collaborator is added to particular note.
+        Exception:
+        ----------
+            KeyError: object
+    """
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
     def get(self, request):
@@ -397,3 +424,32 @@ class CollaboratorAPIView(GenericAPIView):
                 return Response("No such Note available to have any collabrator Added")
         except Exception as e:
             return Response(e)
+
+class ReminderAPIView(GenericAPIView):
+    """
+        Summary:
+        --------
+            This API will remindes user at the date and time specified by the user.
+        Exception:
+        ----------
+            Not Found error
+    """
+    serializer_class = ReminderSerializer
+    # queryset = Notes.objects.all()
+
+    def patch(self, request, id):
+        try:
+            user = request.user
+            note = Notes.objects.get(user_id=user.id, id=id)
+            print(note)
+            serializer = ReminderSerializer(data=request.data)
+            print(serializer)
+            serializer.is_valid(raise_exception=True)
+            print(serializer.data.get('reminder'))
+            note.reminder = serializer.data.get('reminder')
+            note.save()
+            logger.info("Reminder is set")
+            return Response({'details': 'Reminder is set'}, status=200)
+        except:
+            return Response("Note not found", status=404)
+
