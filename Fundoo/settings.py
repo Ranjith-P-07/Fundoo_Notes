@@ -56,6 +56,9 @@ INSTALLED_APPS = [
     'drf_yasg',
     'colorful',
     'django_filters',
+
+    'django_celery_results',
+    'django_celery_beat',
 ]
 
 Site=5 
@@ -145,13 +148,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'Asia/Kolkata'
+TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = False
+USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
@@ -208,3 +211,6 @@ EMAIL_USE_TLS = True
 
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
+
+CELERY_RESULT_BACKEND = 'django-db'
+CELERY_CACHE_BACKEND = 'django-cache'
