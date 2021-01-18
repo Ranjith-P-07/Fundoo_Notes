@@ -1,3 +1,5 @@
+from __future__ import absolute_import, unicode_literals
+
 import os
 
 from celery import Celery
@@ -11,7 +13,11 @@ app.config_from_object('django.conf:settings', namespace='CELERY')
 app.conf.beat_schedule = {
     'Check Every Day':{
         'task':'Note.tasks.delete_trashed_note',
-        'schedule':10,
+        'schedule':24*60*60,
+    },
+    'Check Reminder Every 5 second':{
+        'task': 'Note.tasks.note_reminder',
+        'schedule':5,
     }
 }
 
