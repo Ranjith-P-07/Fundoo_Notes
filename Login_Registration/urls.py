@@ -15,3 +15,4 @@ urlpatterns = [
     # path('profile/', views.profileView, name='profile'),
     path('updateprofile/', views.ProfileUpdate.as_view(), name='updateprofile'),
 ]
+

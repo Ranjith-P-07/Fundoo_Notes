@@ -10,6 +10,12 @@ class Registration(models.Model):
     password1 = models.CharField(max_length=60)
     password2 = models.CharField(max_length=50)
 
+    def get_username(self):
+        return self.username
+
+    def get_email(self):
+        return self.email
+
     def __str__(self):
         return self.username
 
