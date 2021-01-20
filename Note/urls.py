@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import NoteCreateView, LabelCreateView, LabelUpdateView, TrashNoteAPI, ArchiveNoteView, CollaboratorAPIView
+from .views import NoteCreateView, LabelCreateView, LabelUpdateView, TrashNoteAPI, ArchiveNoteView, CollaboratorAPIView, UnTrashNoteAPI, UnArchieveNoteAPI
 from . import views
 
 urlpatterns = [
@@ -13,4 +13,6 @@ urlpatterns = [
     path('reminder-note/<int:id>/', views.ReminderAPIView.as_view(), name='note_reminder'),
     path('search-note/', views.SearchBoxView.as_view(), name='Search_note'),
     path('trash-note/', views.TrashNoteAPI.as_view(), name='Trash_note'),
+    path('unarchive-note/<int:id>/', views.UnArchieveNoteAPI.as_view(), name='UnArchive_note'),
+    path('untrash-note/<int:id>/', views.UnTrashNoteAPI.as_view(), name='UnTrash_note'),
 ]
