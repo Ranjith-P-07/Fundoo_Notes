@@ -7,7 +7,7 @@ class NotesSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notes
         fields = ['title', 'note', 'is_archive', 'is_trashed', 'is_pinned', 'color', 'label', 'collabrator']
-        extra_kwargs = {'label': {'read_only': True}, 'collabrator': {'read_only': True}}
+        extra_kwargs = {'label': {'read_only': True}, 'collabrator': {'read_only': True}, 'color': {'read_only': True}}
 
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
