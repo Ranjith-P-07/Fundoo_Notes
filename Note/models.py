@@ -9,8 +9,8 @@ class Label(models.Model):
     labelname = models.CharField(max_length=100)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
 
-    # def get_labelname(self):
-    #     return self.labelname
+    def get_labelname(self):
+        return self.labelname
 
     def __str__(self):
         return self.labelname
@@ -31,8 +31,8 @@ class Notes(models.Model):
     trashed_time = models.DateTimeField(default=None, blank=True, null=True)
     reminder = models.DateTimeField(default=None, blank=True, null=True)
 
-    # def get_note(self):
-    #     return self.note
+    def get_note(self):
+        return self.note
 
     def __str__(self):
         return self.title
