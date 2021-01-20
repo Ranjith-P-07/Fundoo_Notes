@@ -4,6 +4,7 @@ from .models import Notes
 from datetime import datetime, timedelta
 from django_celery_results.models import TaskResult
 import time
+from django.core.mail import send_mail
 
 @shared_task()
 def delete_trashed_note():
@@ -22,4 +23,8 @@ def note_reminder():
             print(note.reminder)
             note.reminder = None
             note.save()
+            send_mail('Reminder From Celery.!',
+            'This is a reminder that is set',
+            'testsender102@gmail.com',
+            ['ranjithgowda028@gmail.com'])
             return "Reminder has been Triggered..!!!"
