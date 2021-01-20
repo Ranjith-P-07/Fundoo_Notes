@@ -353,6 +353,52 @@ class TrashNoteAPI(generics.ListAPIView):
         logger.info("Trashed Notes are Listed")
         return self.queryset.filter(user=self.request.user, is_trashed=True)
 
+@method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
+class UnTrashNoteAPI(GenericAPIView):
+    serializer_class = NotesSerializer
+    queryset = Notes.objects.all()
+
+    def get_object(self, request, id):
+        try:
+            user = request.user
+            queryset = Notes.objects.filter(user_id=user.id, is_trashed=True)
+            return get_object_or_404(queryset, id=id)
+        except Notes.DoesNotExist:
+            logger.error("id not present, from get_object()")
+            return Response({"response": "id not present"}, status=404)
+
+    def get(self, request, id):
+        try:
+            user = request.user
+            mynote = self.get_object(request, id)
+            serializer = NotesSerializer(mynote)
+            logger.info("Retrieved specific id, from get()")
+            return Response({"response": serializer.data}, status=200)
+        except Exception:
+            logger.error("can't get this id, from get()")
+            return Response({"response": "can't get this id / it is not trashed"}, status=404)
+
+    def put(self, request, id):
+        user = request.user
+        try:
+            data = request.data
+            instance = self.get_object(request, id)
+            serializer = NotesSerializer(instance, data=data)
+
+            if serializer.is_valid():
+                note_update = serializer.save(user_id=user.id)
+                is_trashed_check = serializer.data["is_trashed"]
+                if is_trashed_check == False:
+                    logger.info("Note untrashed successfully")
+                    return Response({"response": "Note untrashed successfully"}, status=200)
+                else:
+                    logger.error("Note untrash failed, Note present in trash only")
+                    return Response({"response": "Note UnTrashed failed,Note present in Trash only"}, status=400)
+        except:
+            logger.error("Failed to UnTrash Note, from put()")
+            return Response({"response": "Failed to unTrash"}, status=400)
+
+
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class SearchBoxView(GenericAPIView):
