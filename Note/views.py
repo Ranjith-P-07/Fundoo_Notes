@@ -354,6 +354,7 @@ class TrashNoteAPI(generics.ListAPIView):
         return self.queryset.filter(user=self.request.user, is_trashed=True)
 
 
+@method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class SearchBoxView(GenericAPIView):
     """
         Summary:
@@ -371,29 +372,31 @@ class SearchBoxView(GenericAPIView):
             for query in search_split:
                 if cache.get(search_split):
                     result = cache.get(search_split)
-                    print("data from cache")
+                    logger.info("data from cache")
                 else:
                     note = Notes.objects.filter(user_id=user.id, is_trashed=False)
                     result = note.filter(Q(title__icontains=query)|Q(note__icontains=query))
                     if result:
                         cache.set(search_split, result)
-                        print("Data from db")
+                        logger.info("Data from db")
         else:
             result = Notes.objects.filter(user_id=user.id)
+            logger.info("All Notes listed")
         return result
 
     def get(self, request):
         search_query = request.GET.get('search')
         if search_query:
             result = self.get_search(search_query)
+            logger.info("Obtained collaborated Notes")
         else:
             result = self.get_search()
         serializer = NotesSerializer(result, many=True)
+        logger.info("all notes are listed")
         return Response(serializer.data, status=200)
 
 
-
-
+@method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class CollaboratorAPIView(GenericAPIView):
     """
         Summary:
@@ -421,10 +424,12 @@ class CollaboratorAPIView(GenericAPIView):
                     num_collaborator = num_collaborator + [collabrator_list[i]]
                 return Response(num_collaborator, status=200)
             else:
-                return Response("No such Note available to have any collabrator Added")
+                logger.info("No such Note available to have any collabrator Added")
+                return Response({"Details" : "No such Note available to have any collabrator Added"}, status=404)
         except Exception as e:
             return Response(e)
 
+@method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class ReminderAPIView(GenericAPIView):
     """
         Summary:
@@ -441,15 +446,13 @@ class ReminderAPIView(GenericAPIView):
         try:
             user = request.user
             note = Notes.objects.get(user_id=user.id, id=id)
-            print(note)
             serializer = ReminderSerializer(data=request.data)
-            print(serializer)
             serializer.is_valid(raise_exception=True)
-            print(serializer.data.get('reminder'))
             note.reminder = serializer.data.get('reminder')
             note.save()
             logger.info("Reminder is set")
             return Response({'details': 'Reminder is set'}, status=200)
         except:
-            return Response("Note not found", status=404)
+            logger.error("Note not found, from ()patch")
+            return Response({"Details" : "Note not found"}, status=404)
 
