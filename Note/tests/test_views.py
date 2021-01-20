@@ -287,3 +287,42 @@ class NoteViewAPITest(TestCase):
         self.assertEquals(response.status_code, status.HTTP_201_CREATED)
 
 
+#Test cases for Reminder API
+
+    def test_add_reminder_when_valid_reminder_time_is_given_without_login(self):
+        id = self.note_for_user1.id
+        data = {
+            'reminder':datetime.now()+timedelta(minutes=1)
+        }
+        response = self.client.patch(reverse('note_reminder',args=[id]),data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+
+    def test_add_reminder_when_valid_reminder_time_is_given_after_login_with_invalid_login_credentials(self):
+        self.client.post(reverse('login'),data=json.dumps(self.invalid_credentials), content_type='application/json')
+        id = self.note_for_user1.id
+        data = {
+            'reminder':datetime.now()+timedelta(minutes=1)
+        }
+        response = self.client.patch(reverse('note_reminder',args=[id]),data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_302_FOUND)
+
+
+    def test_add_reminder_when_valid_reminder_time_is_given(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        id = self.note_for_user1.id
+        data = {
+            'reminder':datetime.now()+timedelta(minutes=1)
+        }
+        response = self.client.patch(reverse('note_reminder',args=[id]),data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_200_OK)
+        self.assertEquals(response.data, {'details': 'Reminder is set'})
+
+    def test_add_reminder_when_invalid_reminder_time_is_given(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        id = self.note_for_user1.id
+        data = {
+            'reminder':datetime.now() - timedelta(minutes=1)
+        }
+        response = self.client.patch(reverse('note_reminder',args=[id]),data=data, content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEquals(response.data, {"Details" : "Note not found"})
