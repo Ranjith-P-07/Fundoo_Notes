@@ -265,3 +265,25 @@ class NoteViewAPITest(TestCase):
         response = self.client.get('http://localhost:8000/Noteapi/search-note/?search=Title', content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
+# Test cases for collaborator API
+
+    def test_add_collaborator_without_login(self):
+        response = self.client.post(reverse('collaborator_note'), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_add_collaborator_after_login_with_invalid_credentials(self):
+        self.client.post(reverse('login'),data=json.dumps(self.invalid_credentials), content_type='application/json')
+        response = self.client.post(reverse('collaborator_note'), content_type='application/json')
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+
+    def test_to_add_collaborator_to_Notes_after_login(self):
+        self.client.post(reverse('login'),data=json.dumps(self.user1_credentials), content_type='application/json')
+        valid_payload_1 = {
+            "title": "Test title",
+            "note": "Test note",
+            'collabrator': ['Rahul123@gmail.com']
+        }
+        response = self.client.post(reverse('create_note'), data=json.dumps(valid_payload_1), content_type='application/json')
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
+
+
