@@ -79,7 +79,7 @@ class NoteCreateView(GenericAPIView):
         notes = Notes.objects.filter(user_id = user.id, is_archive=False)
         serializer = NotesSerializer(notes, many=True)
         logger.info("Particular Note is obtained, from get()")
-        return Response(serializer.data, status=200)
+        return Response({"response": serializer.data}, status=200)
 
 
     def post(self, request):
@@ -94,15 +94,14 @@ class NoteCreateView(GenericAPIView):
         data = request.data
         user = request.user
         serializer = NotesSerializer(data=data, partial=True)
-        print(serializer)
         if serializer.is_valid():
             note = serializer.save(user_id=user.id)
             logger.info("New Note is created.")
             cache.set(str(user.id)+"note"+str(note.id), note)
             logger.info("Data is stored in cache")
-            return Response(serializer.data, status=201)
+            return Response({"response": serializer.data}, status=201)
         logger.error("Something went wrong whlie creating Note, from post()")
-        return Response(serializer.data, status=400)
+        return Response({"response": serializer.data}, status=400)
 
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
@@ -119,33 +118,59 @@ class NoteUpdateView(GenericAPIView):
     queryset = Notes.objects.all()
 
     def get_object(self, request, id):
+        """
+            Summary:
+            --------
+                Specific note object will be fetched for the user based on id.
+            --------
+            Exception:
+                PageNotAnInteger: object
+                EmptyPage: object.
+        """
         try:
             user = request.user
             queryset = Notes.objects.filter(user_id=user.id)
             return get_object_or_404(queryset, id=id)
         except Notes.DoesNotExist:
             logger.error("id not present, from get_object()")
-            return Response({'details': 'Id not present'})
+            return Response({'response': 'Id not present'})
 
     def get(self, request, id):
+        """
+            Summary:
+            --------
+                Specific note will be fetched for the user based on id.
+            --------
+            Exception:
+                PageNotAnInteger: object
+                EmptyPage: object.
+        """
         try:
             user = request.user
             if cache.get(str(user.id)+"note"+str(id)):
                 note = cache.get(str(user.id)+"note"+str(id))
                 serializer = NotesSerializer(note)
-                print("data from cache")
-                return Response(serializer.data)
+                logger.info("data from cache")
+                return Response({"response": serializer.data})
             else:
                 note = self.get_object(request, id)
                 serializer = NotesSerializer(note)
                 logger.info("got Note successfully, from get()")
-                print("data from db")
-                return Response(serializer.data, status=200)
+                logger.info("data from db")
+                return Response({"response": serializer.data}, status=200)
         except:
             logger.error("something went wrong while getting Note, Enter the right id, from get()")
             return Response(status=404)
 
     def put(self, request, id):
+        """
+            Summary:
+            --------
+                New note will be updated by the User.
+            Exception:
+            ----------
+                KeyError: object
+        """
         user = request.user
         try:
             data = request.data
@@ -167,26 +192,30 @@ class NoteUpdateView(GenericAPIView):
 
 
     def delete(self, request, id):
+        """
+            Summary:
+            --------
+                Note will be deleted by the User.
+            Exception:
+            ----------
+                KeyError: object
+        """
         user = request.user
         try:
-            # data = request.data
             instance = self.get_object(request, id)
-            # print(instance)
             if instance.is_trashed:
                 instance.delete()
                 logger.info("Note is Deleted Permanently, from delete()")
-                return Response({'details': 'Note is Deleted'}, status=200)
+                return Response({'response': 'Note is Deleted'}, status=200)
             else:
                 instance.is_trashed = True
                 instance.trashed_time = datetime.now()
                 instance.save()
                 logger.info("Note is Trashed")
-                return Response({'details': 'Your note is Trashed'}, status=200)
-        # except Exception as e:
-        #     return Response(e)
+                return Response({'response': 'Your note is Trashed'}, status=200)
         except:
             logger.error("Note does not exist ")
-            return Response({'details': 'Note is not exist'}, status=404)
+            return Response({'response': 'Note is not exist'}, status=404)
 
 
 
@@ -228,7 +257,7 @@ class LabelCreateView(GenericAPIView):
         """
             Summary:
             --------
-                New note will be create by the User.
+                New label will be create by the User.
             Exception:
             ----------
                 KeyError: object
@@ -252,30 +281,65 @@ class LabelCreateView(GenericAPIView):
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class LabelUpdateView(GenericAPIView):
+    """
+        Summary:
+        --------
+            Existing label can be updated / deleted  by the User.
+        Exception:
+        ----------
+            KeyError: object
+    """
     serializer_class = LabelSerializer
     queryset = Label.objects.all()
 
     def get_object(self, request, id):
+        """
+            Summary:
+            --------
+                Specific label object will be fetched for the user based on id.
+            --------
+            Exception:
+                PageNotAnInteger: object
+                EmptyPage: object.
+        """
         try:
             user = request.user
             queryset = Label.objects.filter(user_id=user.id)
             return get_object_or_404(queryset, id=id)
         except:
             logger.error("id not present, from get_object()")
-            return Response({'details': 'id not present'})
+            return Response({'response': 'id not present'})
 
     def get(self, request, id):
+        """
+            Summary:
+            --------
+                Specific label will be fetched for the user based on id.
+            --------
+            Exception:
+                PageNotAnInteger: object
+                EmptyPage: object.
+        """
         if cache.get(str(user.id)+"label"+str(update_label.id)):
             instance = cache.get(str(user.id)+"label"+str(update_label.id))
             serializer = LabelSerializer(instance)
-            return Response(serializer.data)
+            logger.info("Got label object, from cache get()")
+            return Response({"response": serializer.data})
         else:
             instance = self.get_object(request, id)
             serializer = LabelSerializer(instance)
             logger.info("Got Label object, from get()")
-            return Response(serializer.data, status=200)
+            return Response({"response": serializer.data}, status=200)
 
     def put(self, request, id):
+        """
+            Summary:
+            --------
+                Label will be updated by the User.
+            Exception:
+            ----------
+                KeyError: object
+        """
         user = request.user
         try:
             data = request.data
@@ -285,26 +349,34 @@ class LabelUpdateView(GenericAPIView):
             if serializer.is_valid():
                 update_label = serializer.save(user_id=user.id)
                 logger.info("Label Updated successfully, from put()")
-                return Response({'details': 'Label Updated successfully'}, status=200)
+                return Response({'response': 'Label Updated successfully'}, status=200)
             logger.error("Label not Updated, from put()")
             cache.set(str(user.id)+"label"+str(update_label.id), update_label)
-            return Response({'details': 'Label not Updated'}, status=400)
+            return Response({'response': 'Label not Updated'}, status=400)
         except:
             logger.error("Label is not present, from put()")
-            return Response({'details': 'Label is is not present'}, status=404)
+            return Response({'response': 'Label is is not present'}, status=404)
 
 
     def delete(self, request, id):
+        """
+            Summary:
+            --------
+                Label will be deleted by the User.
+            Exception:
+            ----------
+                KeyError: object
+        """
         try:
             data = request.data
             instance = self.get_object(request, id)
             instance.delete()
             cache.delete(str(user.id)+"label"+str(update_label.id))
             logger.info("Label deleted succesfully, from delete()")
-            return Response({'details': 'Label deleted succesfully'}, status=204)
+            return Response({'response': 'Label deleted succesfully'}, status=204)
         except:
             logger.error("Label not deleted, from delete()")
-            return Response({'details': 'Label not deleted'}, status=404)
+            return Response({'response': 'Label not deleted'}, status=404)
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class ArchiveNoteView(GenericAPIView):
@@ -318,6 +390,11 @@ class ArchiveNoteView(GenericAPIView):
     lookup_field = 'id'
 
     def get(self, request):
+        """
+        Summary:
+        --------
+            All the ArchiveNotes  will be listed for the user.
+        """
         user = request.user
         try:
             archive_redis_data = redis_instance.hvals(str(user.id)+"note")
@@ -325,26 +402,34 @@ class ArchiveNoteView(GenericAPIView):
                 serializer = NotesSerializer(archive_redis_data, many=True)
                 print("Data from redis")
                 logger.info("ArchivedNotes are listed")
-                return Response(serializer.data, status=200)
+                return Response({"response": serializer.data}, status=200)
             else:
                 archive_db_data = Notes.objects.filter(user_id = user.id, is_archive=True)
                 if len(archive_db_data) > 0:
                     serializer = NotesSerializer(archive_db_data, many=True)
                     print("Data from Database")
-                    return Response(serializer.data, status=200)
+                    return Response({"response": serializer.data}, status=200)
                 else:
-                    return Response("Archive data not available", status=400)
+                    return Response({"response": "Archive data not available"}, status=400)
         except Exception as e:
             return Response(e)
-        # except:
-        #     return Response("something went wrong", status=400)
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class UnArchieveNoteAPI(GenericAPIView):
+    """
+    Summary:
+    -------
+        This class is used to Unarchive the archived notes.
+    """
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
 
     def get_object(self, request, id):
+        """
+        Summary:
+        -------
+            This will provide archived note object.
+        """
         try:
             user = request.user
             queryset = Notes.objects.filter(user_id=user.id, is_archive=True)
@@ -354,6 +439,11 @@ class UnArchieveNoteAPI(GenericAPIView):
             return Response({"response": "id not present"}, status=404)
 
     def get(self, request, id):
+        """
+        Summary:
+        -------
+            This will get archived note object.
+        """
         try:
             user = request.user
             mynote = self.get_object(request, id)
@@ -365,6 +455,11 @@ class UnArchieveNoteAPI(GenericAPIView):
             return Response({"response": "can't get this id / it is not archieve"}, status=404)
 
     def put(self, request, id):
+        """
+        Summary:
+        -------
+            This will update the archived note object.
+        """
         user = request.user
         try:
             data = request.data
@@ -401,10 +496,20 @@ class TrashNoteAPI(generics.ListAPIView):
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
 class UnTrashNoteAPI(GenericAPIView):
+    """
+    Summary:
+    -------
+        This class is used to UnTrash the Trashed notes.
+    """
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
 
     def get_object(self, request, id):
+        """
+        Summary:
+        -------
+            This will provide Trashed note object.
+        """
         try:
             user = request.user
             queryset = Notes.objects.filter(user_id=user.id, is_trashed=True)
@@ -414,6 +519,11 @@ class UnTrashNoteAPI(GenericAPIView):
             return Response({"response": "id not present"}, status=404)
 
     def get(self, request, id):
+        """
+        Summary:
+        -------
+            This will get Trashed note object.
+        """
         try:
             user = request.user
             mynote = self.get_object(request, id)
@@ -425,6 +535,11 @@ class UnTrashNoteAPI(GenericAPIView):
             return Response({"response": "can't get this id / it is not trashed"}, status=404)
 
     def put(self, request, id):
+        """
+        Summary:
+        -------
+            This will update the Trashed note object.
+        """
         user = request.user
         try:
             data = request.data
@@ -460,7 +575,6 @@ class SearchBoxView(GenericAPIView):
         user = self.request.user
         if search_query:
             search_split = search_query.split(' ')
-            print(search_split)
             for query in search_split:
                 if cache.get(search_split):
                     result = cache.get(search_split)
@@ -477,6 +591,11 @@ class SearchBoxView(GenericAPIView):
         return result
 
     def get(self, request):
+        """
+        Summary:
+        -------
+            This will fetch data based on search
+        """
         search_query = request.GET.get('search')
         if search_query:
             result = self.get_search(search_query)
@@ -485,7 +604,7 @@ class SearchBoxView(GenericAPIView):
             result = self.get_search()
         serializer = NotesSerializer(result, many=True)
         logger.info("all notes are listed")
-        return Response(serializer.data, status=200)
+        return Response({"response": serializer.data}, status=200)
 
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
@@ -501,6 +620,11 @@ class CollaboratorAPIView(GenericAPIView):
     serializer_class = NotesSerializer
     queryset = Notes.objects.all()
     def get(self, request):
+        """
+            summary:
+            -------
+                This will Fetch collaborated notes.
+        """
         user = request.user
         num_collaborator = []
         try:
@@ -514,10 +638,11 @@ class CollaboratorAPIView(GenericAPIView):
                     collabrator_email = collabrator1.values('email')
                     collabrator_list[i].update(collabrator_email[0])
                     num_collaborator = num_collaborator + [collabrator_list[i]]
-                return Response(num_collaborator, status=200)
+                    logger.info("Listed collaborated Notes")
+                return Response({"response": num_collaborator}, status=200)
             else:
                 logger.info("No such Note available to have any collabrator Added")
-                return Response({"Details" : "No such Note available to have any collabrator Added"}, status=404)
+                return Response({"response" : "No such Note available to have any collabrator Added"}, status=404)
         except Exception as e:
             return Response(e)
 
@@ -532,9 +657,13 @@ class ReminderAPIView(GenericAPIView):
             Not Found error
     """
     serializer_class = ReminderSerializer
-    # queryset = Notes.objects.all()
 
     def patch(self, request, id):
+        """
+            summary:
+            -------
+                This method will set the reminder time for the note specified by the user.
+        """
         try:
             user = request.user
             note = Notes.objects.get(user_id=user.id, id=id)
