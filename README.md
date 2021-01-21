@@ -267,3 +267,5 @@ To run SonarScanner from the zip file, follow these steps:
   1. https://simpleisbetterthancomplex.com/tutorial/2017/08/20/how-to-use-celery-with-django.html
   2. https://www.youtube.com/watch?v=A89mCa1ytow
 
+### Author:
+Ranjith.P
