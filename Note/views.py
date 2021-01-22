@@ -604,7 +604,8 @@ class SearchBoxView(GenericAPIView):
             result = self.get_search()
         serializer = NotesSerializer(result, many=True)
         logger.info("all notes are listed")
-        return Response({"response": serializer.data}, status=200)
+        return Response(serializer.data, status=200)
+        # return Response({"response": serializer.data}, status=200)
 
 
 @method_decorator(login_required(login_url='/auth/login/'), name='dispatch')
